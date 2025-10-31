@@ -95,17 +95,19 @@ class DataFrame:
 
         self.df[COLUMN_NAME] = column
         
-    def _convert_rating(self, rating_column: str):
-        column = self.df[rating_column]
+    def _convert_to_comma(self, column_name: str):
+        column = self.df[column_name]
         column = column.round(1)
         column = column.map(lambda x: '{:.1f}'.format(x)).astype(str).str.replace('.', ',')
 
-        self.df[rating_column] = column
+        self.df[column_name] = column
         
-    def convert_ratings(self):
-        self._convert_rating('Avaliacao_Tecnica')
-        self._convert_rating('Avaliacao_Comportamental')
-    
+    def convert_floating_values(self):
+        self._convert_to_comma('Avaliacao_Tecnica')
+        self._convert_to_comma('Avaliacao_Comportamental')
+        self._convert_to_comma('Engajamento_PIGs')
+        self._convert_to_comma('Score_Desempenho')
+
     def add_score_column(self):
         new_column_name = "Score_Desempenho"
         tech_rating = self.df['Avaliacao_Tecnica']
@@ -131,9 +133,9 @@ class DataFrame:
         self.normalize_seniority()
         self.normalize_ratings()
         self.add_score_column()
-        self.convert_ratings()
         self.normalize_engagement()
         self.add_status_column()
+        self.convert_floating_values()
         
 def main():
     input_file = 'Base_Membros_Desempenho - Base_Membros_Desempenho.csv'
