@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 class DataFrame:
     
@@ -15,16 +16,21 @@ class DataFrame:
     
     
     def get_average(self, column: str) -> float:
-        average = self.df[column].dropna().mean()
-        
-        return average
+        average = pd.to_numeric(self.df[column], errors='coerce').dropna().mean()
+
+        return  round(average, 2)
     
     
     def generate_output(self, output_file: str):
         self.df.to_csv(output_file, index=False)
-        
-    
+
+
     def normalize_seniority(self):
+        
+        COLUMN_NAME = 'Nivel_Senioridade'
+        
+        column = self.df[COLUMN_NAME]
+        
         
         JUNIOR = 'Júnior'
         MIDLEVEL = 'Pleno'
@@ -52,13 +58,12 @@ class DataFrame:
             'SR': SENIOR,
             'S': SENIOR,
         }
-        
-        mode = self.get_mode('Nivel_Senioridade')
-        
-        self.df['Nivel_Senioridade'] = self.df['Nivel_Senioridade'].map(replacement_map).fillna(mode)
-        
+
+        mode = self.get_mode(COLUMN_NAME)
+
+        self.df[COLUMN_NAME] = column.map(replacement_map).fillna(mode)
+
     def _normalize_rating(self, rating_column: str):
-        
         column = self.df[rating_column]
 
         column = pd.to_numeric(column)
@@ -76,6 +81,23 @@ class DataFrame:
         self._normalize_rating('Avaliacao_Tecnica')
         self._normalize_rating('Avaliacao_Comportamental')
 
+    def normalize_engagement(self):
+        COLUMN_NAME = 'Engajamento_PIGs'
+        column = self.df[COLUMN_NAME]
+
+        column = column.astype(str).str.rstrip('%')
+        column = pd.to_numeric(column, errors='coerce')
+
+        column = column / 100.0
+
+        self.df[COLUMN_NAME] = column
+
+        average = self.get_average(COLUMN_NAME)
+
+        column = column.fillna(average)
+
+        self.df[COLUMN_NAME] = column
+
 def main():
     input_file = 'Base_Membros_Desempenho - Base_Membros_Desempenho.csv'
     output_file = 'Base_Membros_Desempenho_Cleaned.csv'
@@ -84,6 +106,7 @@ def main():
     
     data_frame.normalize_seniority()
     data_frame.normalize_ratings()
+    data_frame.normalize_engagement()
     
     data_frame.generate_output(output_file)
 
