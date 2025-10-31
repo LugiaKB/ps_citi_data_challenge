@@ -72,9 +72,6 @@ class DataFrame:
 
         column = column.fillna(average)
 
-        column = column.round(1)
-        column = column.map(lambda x: '{:.1f}'.format(x)).astype(str).str.replace('.', ',')
-
         self.df[rating_column] = column
             
     def normalize_ratings(self):
@@ -97,17 +94,54 @@ class DataFrame:
         column = column.fillna(average)
 
         self.df[COLUMN_NAME] = column
+        
+    def _convert_rating(self, rating_column: str):
+        column = self.df[rating_column]
+        column = column.round(1)
+        column = column.map(lambda x: '{:.1f}'.format(x)).astype(str).str.replace('.', ',')
 
+        self.df[rating_column] = column
+        
+    def convert_ratings(self):
+        self._convert_rating('Avaliacao_Tecnica')
+        self._convert_rating('Avaliacao_Comportamental')
+    
+    def add_score_column(self):
+        new_column_name = "Score_Desempenho"
+        tech_rating = self.df['Avaliacao_Tecnica']
+        behav_rating = self.df['Avaliacao_Comportamental']
+
+        self.df[new_column_name] = round((tech_rating * 0.5) + (behav_rating * 0.5), 2)
+        
+    def add_status_column(self):
+        new_column_name = "Status_Membro"
+        
+        value_map = {
+            True: "Em Destaque",
+            False: "Padrão",
+        }
+        
+        engagement_column = self.df['Engajamento_PIGs']
+        score_column = self.df['Score_Desempenho']
+        
+        self.df[new_column_name] = ((engagement_column >= 0.8) & (score_column >= 7.0)).map(value_map)
+        
+    def clean_data(self):
+        
+        self.normalize_seniority()
+        self.normalize_ratings()
+        self.add_score_column()
+        self.convert_ratings()
+        self.normalize_engagement()
+        self.add_status_column()
+        
 def main():
     input_file = 'Base_Membros_Desempenho - Base_Membros_Desempenho.csv'
     output_file = 'Base_Membros_Desempenho_Cleaned.csv'
 
     data_frame = DataFrame(input_file)
     
-    data_frame.normalize_seniority()
-    data_frame.normalize_ratings()
-    data_frame.normalize_engagement()
-    
+    data_frame.clean_data()
     data_frame.generate_output(output_file)
 
 
